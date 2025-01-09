@@ -1,7 +1,7 @@
 FROM ghcr.io/opennmt/ctranslate2:latest-ubuntu20.04-cuda12.2
 LABEL maintainer="contact@linto.ai, jlouradour@linagora.com, abert@linagora.com"
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg git
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg git curl netcat-traditional
 
 # Install python dependencies
 COPY whisper/requirements.ctranslate2.txt ./

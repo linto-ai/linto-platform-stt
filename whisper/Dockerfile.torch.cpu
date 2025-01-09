@@ -1,7 +1,7 @@
 FROM python:3.9
 LABEL maintainer="contact@linto.ai, jlouradour@linagora.com, dgaynullin@linagora.com"
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl netcat-traditional
 
 # Force CPU versions of torch
 RUN pip3 install \

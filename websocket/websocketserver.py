@@ -14,7 +14,7 @@ async def _fun_wrapper(ws):
 
 async def WSServer(port: int):
     """Launch the websocket server"""
-    async with websockets.serve(_fun_wrapper, "0.0.0.0", serving_port):
+    async with websockets.serve(_fun_wrapper, "0.0.0.0", serving_port, ping_interval=None, ping_timeout=None):
         await asyncio.Future()
 
 

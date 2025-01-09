@@ -133,11 +133,13 @@ An example of .env file is provided in [whisper/.envdefault](https://github.com/
 | VAD_DILATATION | How much (in sec) to enlarge each speech segment detected by the VAD. If not specified, the default is auditok 0.5 | `0.1` \| `0.5` \| ...
 | VAD_MIN_SPEECH_DURATION | Minimum duration (in sec) of a speech segment. If not specified, the default is 0.1 | `0.1` \| `0.5` \| ...
 | VAD_MIN_SILENCE_DURATION | Minimum duration (in sec) of a silence segment. If not specified, the default is 0.1 | `0.1` \| `0.5` \| ...
-| ENABLE_STREAMING | (For the http mode) enable the /streaming websocket route  | `true\|false` |
+| ENABLE_STREAMING | (For the http mode) Legacy, it redirects to websocket mode if enabled | `true` \| `false` |
 | USE_ACCURATE | Use more expensive parameters for better transcriptions (but slower). If not specified, the default is true |  `true` \| `false` \| `1` \| `0` |
-| STREAMING_PORT | (For the websocket mode) the listening port for ingoing WS connexions. | `80` |
+| STREAMING_PORT | (For the websocket mode) the listening port for ingoing WS connexions. If not specified, the default is 80 | `80` |
 | STREAMING_MIN_CHUNK_SIZE | The minimal size of the buffer (in seconds) before transcribing. If not specified, the default is 0.5 | `0.5` \| `26` \| ... |
 | STREAMING_BUFFER_TRIMMING_SEC | The maximum targeted length of the buffer (in seconds). It tries to cut after a transcription has been made. If not specified, the default is 8 | `8` \| `10` \| ... |
+| STREAMING_PAUSE_FOR_FINAL | The minimum duration of silence (in seconds) needed to be able to output a final. If not specified, the default is 1.5 | `0.5` \| `2` \| ... |
+| STREAMING_TIMEOUT_FOR_SILENCE | If VAD is applied locally before sending data to the server, this will allow the server to find the silence. The `packet duration` is determined from the first packet. If a packet is not received during `packet duration * STREAMING_TIMEOUT_FOR_SILENCE` it considers that a silence (lasting the packet duration) is present. Value should be between 1 and 2. If not specified, the default is 1.5 | `1.8` \| ... |
 | SERVICE_NAME | (For the task mode only) queue's name for task processing | `my-stt` |
 | SERVICE_BROKER | (For the task mode only) URL of the message broker | `redis://my-broker:6379` |
 | BROKER_PASS | (For the task mode only) broker password | `my-password` \| (empty) |
@@ -209,9 +211,10 @@ Model `large-v3` and recent models derived from it also supports `yue`(cantonese
 #### SERVING_MODE
 ![Serving Modes](https://i.ibb.co/qrtv3Z6/platform-stt.png)
 
-STT can be used in two ways:
+STT can be used in three ways:
 * Through an [HTTP API](#http-server) using the **http**'s mode.
 * Through a [message broker](#celery-task) using the **task**'s mode.
+* Through a [websocket server](#websocket-server) using the **websocket**'s mode.
 
 Mode is specified using the .env value or environment variable ```SERVING_MODE```.
 ```bash
@@ -285,7 +288,33 @@ Websocket server's mode deploy a streaming transcription service only.
 
 The SERVICE_MODE value in the .env should be set to ```websocket```.
 
-Usage is the same as the [http streaming API](#streaming).
+<!-- Usage is the same as the [http streaming API](#streaming). -->
+
+<!-- The /streaming route is accessible if the ENABLE_STREAMING environment variable is set to true. -->
+
+The exchanges are structured as followed:
+1. Client send a json {"config": {"sample_rate":16000, "language":"en"}}. Language is optional, if not specified it will use the language from the env.
+2. Client send audio chunk (go to 3- ) or {"eof" : 1} (go to 5-).
+3. Server send either a partial result {"partial" : "this is a "} or a final result {"text": "this is a transcription"}.
+4. Back to 2-
+5. Server send a final result and close the connexion.
+
+
+We advise to run streaming on a GPU device.
+
+How to choose the 2 streaming parameters "`STREAMING_MIN_CHUNK_SIZE`" and "`STREAMING_BUFFER_TRIMMING_SEC`"?
+- If you want a low latency (2 to a 5 seconds on a NVIDIA 4090 Laptop), choose a small value for "STREAMING_MIN_CHUNK_SIZE" like 0.5 seconds (to avoid making useless predictions).
+For "`STREAMING_BUFFER_TRIMMING_SEC`", around 10 seconds is a good compromise between keeping latency low and having a good transcription accuracy.
+Depending on the hardware and the model, this value should go from 6 to 15 seconds.
+- If you can efford to have a high latency (30 seconds) and want to minimize GPU activity, choose a big value for "`STREAMING_MIN_CHUNK_SIZE`", such as 26s (which will give latency around 30 seconds).
+For "`STREAMING_BUFFER_TRIMMING_SEC`", you will need to have a value lower than "`STREAMING_MIN_CHUNK_SIZE`".
+Good results can be obtained by using a value between 6 and 12 seconds.
+The lower the value, the lower the GPU usage will be, but you will probably degrade transcription accuracy (more error on words because the model will miss some context).
+
+<!-- Concerning transcription accuracies, some tests on transcription in French gave the following results:
+* around 20% WER (Word Error Rate) with offline transcription,
+* around 30% WER with high latency streaming (around 30 seconds latency on a GPU), and
+* around 40% WER with low latency streaming (beween 2 and 3 seconds latency on average on a GPU). -->
 
 ## Usages
 ### HTTP API
@@ -322,34 +351,7 @@ Return the transcripted text using "text/plain" or a json object when using "app
 }
 ```
 
-#### /streaming
-The /streaming route is accessible if the ENABLE_STREAMING environment variable is set to true.
-
-The route accepts websocket connexions. Exchanges are structured as followed:
-1. Client send a json {"config": {"sample_rate":16000, "language":"en"}}. Language is optional, if not specified it will use the language from the env.
-2. Client send audio chunk (go to 3- ) or {"eof" : 1} (go to 5-).
-3. Server send either a partial result {"partial" : "this is a "} or a final result {"text": "this is a transcription"}.
-4. Back to 2-
-5. Server send a final result and close the connexion.
-
-> Connexion will be closed and the worker will be freed if no chunk are received for 120s. 
-
-We advise to run streaming on a GPU device.
-
-How to choose the 2 streaming parameters "`STREAMING_MIN_CHUNK_SIZE`" and "`STREAMING_BUFFER_TRIMMING_SEC`"?
-- If you want a low latency (2 to a 5 seconds on a NVIDIA 4090 Laptop), choose a small value for "STREAMING_MIN_CHUNK_SIZE" like 0.5 seconds (to avoid making useless predictions).
-For "`STREAMING_BUFFER_TRIMMING_SEC`", around 10 seconds is a good compromise between keeping latency low and having a good transcription accuracy.
-Depending on the hardware and the model, this value should go from 6 to 15 seconds.
-- If you can efford to have a high latency (30 seconds) and want to minimize GPU activity, choose a big value for "`STREAMING_MIN_CHUNK_SIZE`", such as 26s (which will give latency around 30 seconds).
-For "`STREAMING_BUFFER_TRIMMING_SEC`", you will need to have a value lower than "`STREAMING_MIN_CHUNK_SIZE`".
-Good results can be obtained by using a value between 6 and 12 seconds.
-The lower the value, the lower the GPU usage will be, but you will probably degrade transcription accuracy (more error on words because the model will miss some context).
-
-<!-- Concerning transcription accuracies, some tests on transcription in French gave the following results:
-* around 20% WER (Word Error Rate) with offline transcription,
-* around 30% WER with high latency streaming (around 30 seconds latency on a GPU), and
-* around 40% WER with low latency streaming (beween 2 and 3 seconds latency on average on a GPU). -->
-
+<!-- #### /streaming -->
 
 #### /docs
 The /docs route offers a OpenAPI/swagger interface.

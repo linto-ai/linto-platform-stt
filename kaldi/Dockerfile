@@ -14,6 +14,8 @@ RUN apt-get update && \
         g++ \
         make \
         cmake \
+        curl \
+        netcat-traditional \
         git \
         zlib1g-dev \
         automake \
