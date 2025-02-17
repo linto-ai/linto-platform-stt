@@ -1,7 +1,7 @@
 FROM python:3.8
 LABEL maintainer="contact@linto.ai, jlouradour@linagora.com, abert@linagora.com"
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl netcat-traditional
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl netcat-traditional gosu
 
 # Install python dependencies
 COPY whisper/requirements.torch.txt ./

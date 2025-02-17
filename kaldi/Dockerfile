@@ -23,6 +23,7 @@ RUN apt-get update && \
         libtool \
         pkg-config \
         ca-certificates \
+        gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Build vosk-kaldi
