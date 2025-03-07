@@ -1,0 +1,64 @@
+############################################
+# SERVING PARAMETERS
+############################################
+# "http" or "task" or "websocket"
+SERVICE_MODE=http
+
+# Below: used when SERVICE_MODE=task
+SERVICE_NAME=stt
+SERVICES_BROKER=redis://172.17.0.1:6379
+BROKER_PASS=
+
+# HTTP PARAMETERS
+ENABLE_STREAMING=false
+
+# WEBSOCKET PARAMETERS
+STREAMING_PORT=80
+
+############################################
+# STT MODELING PARAMETERS
+############################################
+
+MODEL=nvidia/stt_fr_conformer_ctc_large
+ARCHITECTURE=ctc_bpe
+
+# MODEL=nvidia/stt_fr_fastconformer_hybrid_large_pc
+# ARCHITECTURE=hybrid_bpe
+
+# MODEL=nvidia/stt_en_fastconformer_hybrid_medium_streaming_80ms_pc
+# ARCHITECTURE=hybrid_bpe
+
+# MODEL=nvidia/parakeet-rnnt-0.6b
+# ARCHITECTURE=rnnt_bpe
+
+# 480s=8min. A file longer than that will be split into smaller parts. This value depends on your VRAM/RAM amount
+LONG_FILE_THRESHOLD=480
+# 240s=4min. Size of the parts into which the audio is splitted. This value depends on your VRAM/RAM amount
+LONG_FILE_CHUNK_LEN=240
+# 10s of context at the begining and end of each chunk
+LONG_FILE_CHUNK_CONTEXT_LEN=10
+
+VAD=false
+
+# Streaming parameters
+STREAMING_MIN_CHUNK_SIZE=1
+STREAMING_BUFFER_TRIMMING_SEC=10
+STREAMING_PAUSE_FOR_FINAL=2
+
+############################################
+# EFFICIENCY PARAMETERS
+############################################
+
+# Device to use. It can be "cuda" to force/check GPU, "cpu" to force computation on CPU, or a specific GPU ("cuda:0", "cuda:1", ...)
+DEVICE=cpu
+
+# NVIDIA_VISIBLE_DEVICES=0
+# NVIDIA_DRIVER_CAPABILITIES=all
+# CUDA_DEVICE_ORDER=PCI_BUS_ID
+# CUDA_VISIBLE_DEVICES=0
+
+# Number of threads per worker when running on CPU
+NUM_THREADS=4
+
+# Number of workers minus one (all except from the main one)
+CONCURRENCY=0

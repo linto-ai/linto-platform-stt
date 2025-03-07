@@ -1,0 +1,65 @@
+numpy==1.26.4
+typing_extensions
+celery[redis,auth,msgpack]>=4.4.7
+flask>=1.1.2
+flask-cors>=3.0.10
+flask-sock
+flask-swagger-ui==3.36.0
+gevent
+gunicorn
+lockfile
+pyyaml>=5.4.1
+regex
+requests>=2.26.0
+wavio>=0.0.4
+websockets
+auditok<0.3.0
+torchaudio
+huggingface_hub<0.24
+
+# huggingface_hub<0.24
+# kaldi-python-io
+# kaldiio
+# lhotse>=1.26.0
+# librosa>=0.10.2
+# marshmallow
+# optuna
+# packaging
+# pyannote.core
+# pyannote.metrics
+# pydub
+# pyloudnorm
+# resampy
+# ruamel.yaml
+# scipy>=0.14
+# soundfile
+
+# texterrors
+# braceexpand
+# editdistance
+# einops
+# g2p_en
+# jiwer
+# datasets==2.19.0
+# inflect
+# mediapy==1.1.6
+# pandas
+# sacremoses>=0.0.43
+# sentencepiece<1.0.0
+# numba
+# onnx>=1.7.0
+# protobuf==3.20.3
+# python-dateutil
+# scikit-learn
+# setuptools>=70.0.0
+# tensorboard
+# text-unidecode
+# torch
+# tqdm>=4.41.0
+# wget
+# wrapt
+# matplotlib
+# pesq
+# pystoi
+# 
+# hydra
